@@ -1,6 +1,5 @@
 var express = require('express');
 var DirectLine = require('./lib/direct-line');
-var ActivityHandler = require('./lib/activity-handler');
 
 const LineClient = require('@line/bot-sdk').Client;
 const middleware = require('@line/bot-sdk').middleware
@@ -41,8 +40,8 @@ app.post('/line', async function (req, res) {
                 text: event.message.text,
                 from: {
                     id: event.source.userId,
-                    name: 'user',
-                    token: event.replyToken
+                    name: 'user', // TODO:figure out the user's name.
+                    token: event.replyToken // Needed to send a response to the message from theb user.
                 }
             }).then(() => {
                 res.sendStatus(200);
@@ -52,16 +51,19 @@ app.post('/line', async function (req, res) {
             // todo: figure out how we can keep this websocket around……… it only gets created on FOLLOW events.
             try {
                 await directLine.startConversation((activity) => {
-                    // callback for new messages from bot framework.
+                    // callback for new messages from bot framework. When a message appears on the WebSocket,
+                    // we parse the activity, and send it to the line client. We need to add the ability to
+                    // create custom line cards, if necessary.
                     console.log('sending activity from bot');
                     console.log(activity);
-                    // need to handle activity here.
+                    // need to handle other types of activity here.
 
                     return new Promise(function (resolve, reject) {
+                        // Send the message from Bot Framework to Line.
                         lineClient.replyMessage(activity.from.token, {
                             type: 'text',
                             text: activity.text,
-                        }).then((value) => resolve(value)).reject()
+                        }).then((value) => resolve(value));
                     });
                 });
             } catch (err) {
